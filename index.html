@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Form with Video Background</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Video background container - now visible from the start */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 1;
+        }
+
+        .video-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4); /* Slightly lighter overlay */
+        }
+
+        /* Main page with Join button - now over video background */
+        .main-page {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .main-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+            margin-bottom: 50px;
+        }
+
+        .main-content h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .main-content p {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .join-button {
+            padding: 18px 50px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #ff4757, #ff6b7a);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+            animation: fadeInUp 1s ease-out 0.6s both, pulse 2s infinite 1.6s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .join-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .join-button:hover::before {
+            left: 100%;
+        }
+
+        .join-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 71, 87, 0.6);
+        }
+
+        .join-button:active {
+            transform: translateY(-1px);
+        }
+
+        /* Registration container */
+        .registration-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.5s ease;
+            z-index: 1000;
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .registration-container.active {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Form styles */
+        .form-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-header h2 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .form-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .form-content {
+            display: none;
+        }
+
+        .form-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .close-button:hover {
+            color: #333;
+            transform: rotate(90deg);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-message {
+            color: #27ae60;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* Loading spinner for redirect */
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Additional floating elements for visual appeal */
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .floating-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .floating-circle:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .floating-circle:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        .floating-circle:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Video Background - now visible from the start with your specified video -->
+    <div class="video-background">
+        <video autoplay muted loop>
+            <source src="https://media.istockphoto.com/id/2183715869/video/women-talking-and-tablet-with-discussion-computer-and-review-for-project-management-at-media.mp4?s=mp4-640x640-is&k=20&c=bs2wZ-rqyPiwGWrn5V0AyFow6yMfo64rqIH7fLxkqAQ=" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="video-overlay"></div>
+    </div>
+
+    <!-- Floating elements for visual appeal -->
+    <div class="floating-elements">
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+    </div>
+
+    <!-- Loading spinner for redirect -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Main page with Join button - now over video background -->
+    <div class="main-page" id="mainPage">
+        <div class="main-content">
+            <h1>Welcome to Our Platform</h1>
+            <p>Join thousands of users already connected</p>
+        </div>
+        <button class="join-button" onclick="showRegistration()">Join Now</button>
+    </div>
+
+    <!-- Registration Form -->
+    <div class="registration-container" id="registrationContainer">
+        <div class="form-box">
+            <button class="close-button" onclick="hideRegistration()">&times;</button>
+            
+            <div class="form-header">
+                <h2>Welcome</h2>
+                <p>Join our community today</p>
+            </div>
+
+            <div class="form-tabs">
+                <button class="tab-button active" onclick="switchTab('signin')">Sign In</button>
+                <button class="tab-button" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+
+            <!-- Sign In Form -->
+            <div class="form-content active" id="signinForm">
+                <form onsubmit="handleSignIn(event)">
+                    <div class="form-group">
+                        <label for="signinEmail">Email</label>
+                        <input type="email" id="signinEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signinPassword">Password</label>
+                        <input type="password" id="signinPassword" required>
+                    </div>
+                    <button type="submit" class="submit-button">Sign In</button>
+                    <div class="error-message" id="signinError"></div>
+                </form>
+            </div>
+
+            <!-- Sign Up Form -->
+            <div class="form-content" id="signupForm">
+                <form onsubmit="handleSignUp(event)">
+                    <div class="form-group">
+                        <label for="signupName">Full Name</label>
+                        <input type="text" id="signupName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="submit-button">Create Account</button>
+                    <div class="error-message" id="signupError"></div>
+                    <div class="success-message" id="signupSuccess"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User data storage (in a real app, this would be handled by backend)
+        let currentUser = null;
+
+        // Show registration form
+        function showRegistration() {
+            const registrationContainer = document.getElementById('registrationContainer');
+            
+            // Add a subtle animation to the main page while form appears
+            const mainPage = document.getElementById('mainPage');
+            mainPage.style.transition = 'all 0.5s ease';
+            mainPage.style.filter = 'blur(2px)';
+            mainPage.style.transform = 'scale(0.98)';
+            
+            setTimeout(() => {
+                registrationContainer.classList.add('active');
+            }, 200);
+        }
+
+        // Hide registration form
+        function hideRegistration() {
+            const registrationContainer = document.getElementById('registrationContainer');
+            const mainPage = document.getElementById('mainPage');
+            
+            registrationContainer.classList.remove('active');
+            
+            setTimeout(() => {
+                mainPage.style.filter = 'blur(0px)';
+                mainPage.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        // Switch between sign in and sign up tabs
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.form-content');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'signin') {
+                tabs[0].classList.add('active');
+                document.getElementById('signinForm').classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('signupForm').classList.add('active');
+            }
+        }
+
+        // Show loading spinner
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+
+        // Hide loading spinner
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        // Redirect to home.html with user data
+        function redirectToHome(userData) {
+            showLoading();
+            
+            // Store user data in localStorage to persist across pages
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            
+            // Simulate loading delay for better UX
+            setTimeout(() => {
+                window.location.href = 'home.html';
+            }, 1500);
+        }
+
+        // Handle sign in
+        function handleSignIn(event) {
+            event.preventDefault();
+            const email = document.getElementById('signinEmail').value;
+            const password = document.getElementById('signinPassword').value;
+            const errorDiv = document.getElementById('signinError');
+            
+            // Simple validation
+            if (email && password) {
+                errorDiv.style.display = 'none';
+                
+                // Create user data object
+                const userData = {
+                    email: email,
+                    name: email.split('@')[0], // Extract name from email
+                    loginTime: new Date().toISOString(),
+                    isAuthenticated: true
+                };
+                
+                // Redirect to home.html with user data
+                redirectToHome(userData);
+                
+            } else {
+                errorDiv.textContent = 'Please fill in all fields';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Handle sign up
+        function handleSignUp(event) {
+            event.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorDiv = document.getElementById('signupError');
+            const successDiv = document.getElementById('signupSuccess');
+            
+            // Validation
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Passwords do not match';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
+            
+            // Success
+            errorDiv.style.display = 'none';
+            successDiv.textContent = 'Account created successfully!';
+            successDiv.style.display = 'block';
+            
+            // Create user data object
+            const userData = {
+                name: name,
+                email: email,
+                signupTime: new Date().toISOString(),
+                isAuthenticated: true
+            };
+            
+            // Clear form
+            event.target.reset();
+            
+            // Redirect to home.html with user data after a short delay
+            setTimeout(() => {
+                redirectToHome(userData);
+            }, 1000);
+        }
+
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add mouse move effect to main content
+            const mainContent = document.querySelector('.main-content');
+            
+            document.addEventListener('mousemove', (e) => {
+                const x = (e.clientX / window.innerWidth - 0.5) * 20;
+                const y = (e.clientY / window.innerHeight - 0.5) * 20;
+                mainContent.style.transform = `translate(${x}px, ${y}px)`;
+            });
+
+            // Check if user is already logged in (redirected back from home.html)
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                if (user.isAuthenticated) {
+                    // Optionally show a welcome back message
+                    console.log(`Welcome back, ${user.name || user.email}!`);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
