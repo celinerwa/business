@@ -100,6 +100,12 @@ function required(body, limits) {
 function publicUser(user) {
   return { id: user._id.toString(), name: user.name, email: user.email, role: user.role, createdAt: user.createdAt };
 }
+function storedBuffer(value) {
+  if (Buffer.isBuffer(value)) return value;
+  if (value && Buffer.isBuffer(value.buffer)) return value.buffer.subarray(0, value.position || value.buffer.length);
+  if (value && typeof value.value === 'function') return Buffer.from(value.value(true));
+  return Buffer.from(value);
+}
 function tokenFrom(req) {
   const match = /^Bearer\s+([a-f0-9]{64})$/i.exec(req.headers.authorization || '');
   return match ? match[1] : null;
@@ -178,8 +184,9 @@ async function handleApi(req, res, url) {
     if (!emailValid(body.email) || typeof body.password !== 'string' || body.password.length > 128) return json(res, 400, { error: 'A valid email and password are required.' });
     const user = await users.findOne({ email: body.email.trim().toLowerCase() });
     if (!user) return json(res, 401, { error: 'Email or password is incorrect.' });
-    const candidate = await scrypt(body.password, user.salt, 64);
-    if (!crypto.timingSafeEqual(candidate, user.passwordHash)) return json(res, 401, { error: 'Email or password is incorrect.' });
+    const candidate = await scrypt(body.password, storedBuffer(user.salt), 64);
+    const savedHash = storedBuffer(user.passwordHash);
+    if (candidate.length !== savedHash.length || !crypto.timingSafeEqual(candidate, savedHash)) return json(res, 401, { error: 'Email or password is incorrect.' });
     return json(res, 200, { user: publicUser(user), token: await issueSession(user) });
   }
 
