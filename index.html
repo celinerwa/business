@@ -506,11 +506,12 @@
         }
 
         // Redirect to home.html with user data
-        function redirectToHome(userData) {
+        function redirectToHome(userData, token) {
             showLoading();
             
             // Store user data in localStorage to persist across pages
             localStorage.setItem('currentUser', JSON.stringify(userData));
+            localStorage.setItem('authToken', token);
             
             // Simulate loading delay for better UX
             setTimeout(() => {
@@ -519,35 +520,25 @@
         }
 
         // Handle sign in
-        function handleSignIn(event) {
+        async function handleSignIn(event) {
             event.preventDefault();
             const email = document.getElementById('signinEmail').value;
             const password = document.getElementById('signinPassword').value;
             const errorDiv = document.getElementById('signinError');
-            
-            // Simple validation
-            if (email && password) {
-                errorDiv.style.display = 'none';
-                
-                // Create user data object
-                const userData = {
-                    email: email,
-                    name: email.split('@')[0], // Extract name from email
-                    loginTime: new Date().toISOString(),
-                    isAuthenticated: true
-                };
-                
-                // Redirect to home.html with user data
-                redirectToHome(userData);
-                
-            } else {
-                errorDiv.textContent = 'Please fill in all fields';
+            errorDiv.style.display = 'none';
+            try {
+                const response = await fetch('/api/auth/signin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Could not sign in.');
+                redirectToHome({ ...result.user, loginTime: new Date().toISOString(), isAuthenticated: true }, result.token);
+            } catch (error) {
+                errorDiv.textContent = error.message || 'Unable to reach the server.';
                 errorDiv.style.display = 'block';
             }
         }
 
         // Handle sign up
-        function handleSignUp(event) {
+        async function handleSignUp(event) {
             event.preventDefault();
             const name = document.getElementById('signupName').value;
             const email = document.getElementById('signupEmail').value;
@@ -564,33 +555,27 @@
                 return;
             }
             
-            if (password.length < 6) {
-                errorDiv.textContent = 'Password must be at least 6 characters';
+            if (password.length < 8) {
+                errorDiv.textContent = 'Password must be at least 8 characters';
                 errorDiv.style.display = 'block';
                 successDiv.style.display = 'none';
                 return;
             }
             
-            // Success
             errorDiv.style.display = 'none';
-            successDiv.textContent = 'Account created successfully!';
-            successDiv.style.display = 'block';
-            
-            // Create user data object
-            const userData = {
-                name: name,
-                email: email,
-                signupTime: new Date().toISOString(),
-                isAuthenticated: true
-            };
-            
-            // Clear form
-            event.target.reset();
-            
-            // Redirect to home.html with user data after a short delay
-            setTimeout(() => {
-                redirectToHome(userData);
-            }, 1000);
+            try {
+                const response = await fetch('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }) });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Could not create account.');
+                successDiv.textContent = 'Account created successfully!';
+                successDiv.style.display = 'block';
+                event.target.reset();
+                setTimeout(() => redirectToHome({ ...result.user, signupTime: new Date().toISOString(), isAuthenticated: true }, result.token), 500);
+            } catch (error) {
+                errorDiv.textContent = error.message || 'Unable to reach the server.';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            }
         }
 
         // Add some interactive effects

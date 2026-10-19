@@ -871,12 +871,15 @@
         });
 
         // Logout function
-        function logout() {
+        async function logout() {
             // Show loading overlay
             document.getElementById('loadingOverlay').style.display = 'flex';
             
+            const token = localStorage.getItem('authToken');
+            if (token) await fetch('/api/auth/signout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
             // Clear user data from localStorage
             localStorage.removeItem('currentUser');
+            localStorage.removeItem('authToken');
             
             // Redirect to login page
             setTimeout(() => {

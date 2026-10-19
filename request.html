@@ -871,54 +871,47 @@
             // Show loading
             document.getElementById('loadingOverlay').style.display = 'flex';
             document.getElementById('submitBtn').disabled = true;
-            
-            // Collect form data
-            const formData = new FormData(event.target);
-            const requestData = {};
-            
-            // Add form fields
-            for (let [key, value] of formData.entries()) {
-                requestData[key] = value;
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                alert('Please sign in before submitting a management request.');
+                window.location.href = 'index.html';
+                return;
             }
-            
-            // Add service type and priority
+            const requestData = Object.fromEntries(new FormData(event.target).entries());
             requestData.serviceType = serviceSelected.value;
             requestData.priority = prioritySelected.value;
             requestData.uploadedFiles = uploadedFiles.map(file => file.name);
-            requestData.submissionDate = new Date().toISOString();
-            requestData.userId = localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser')).email : 'unknown';
-            requestData.status = 'submitted';
-            
-            // Store the request in localStorage for the confirmation page
-            let managementRequests = JSON.parse(localStorage.getItem('managementRequests') || '[]');
-            managementRequests.push(requestData);
-            localStorage.setItem('managementRequests', JSON.stringify(managementRequests));
-            
-            console.log('Management Request Submitted:', requestData);
-            
-            // Simulate API call delay then redirect
-            setTimeout(() => {
-                // Hide loading
+            fetch('/api/requests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(requestData)
+            }).then(async response => {
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Unable to submit your request.');
                 document.getElementById('loadingOverlay').style.display = 'none';
-                
-                // Show success message briefly then redirect
                 document.getElementById('successMessage').style.display = 'block';
-                
-                // Redirect to confirmation page after brief delay
                 setTimeout(() => {
-                    window.location.href = 'request-management.html?submitted=true&requestId=' + encodeURIComponent(requestData.companyName.replace(/\s+/g, '-').toLowerCase());
-                }, 1500);
-                
-            }, 2000);
+                    window.location.href = 'request-management.html?submitted=true&requestId=' + encodeURIComponent(result.request.id);
+                }, 1200);
+            }).catch(error => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                alert(error.message || 'Unable to reach the server. Please try again.');
+            });
         }
 
         // Logout function
-        function logout() {
+        async function logout() {
             // Show loading overlay
             document.getElementById('loadingOverlay').style.display = 'flex';
             
+            const token = localStorage.getItem('authToken');
+            if (token) await fetch('/api/auth/signout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
             // Clear user data from localStorage
             localStorage.removeItem('currentUser');
+            localStorage.removeItem('authToken');
             
             // Redirect to login page
             setTimeout(() => {

@@ -1012,26 +1012,34 @@
             }
         }
 
-        function submitForm() {
+        async function submitForm() {
             const submitButton = document.querySelector('.form-submit');
             const originalText = submitButton.innerHTML;
             
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Sending...';
             submitButton.disabled = true;
-            
-            // Simulate form submission
-            setTimeout(() => {
+            try {
+                const values = Object.fromEntries(new FormData(document.getElementById('contactForm')).entries());
+                values.newsletter = document.getElementById('newsletter').checked;
+                values.privacy = document.getElementById('privacy').checked;
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(values)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Unable to send your message.');
                 document.getElementById('successMessage').classList.add('show');
                 document.getElementById('contactForm').reset();
-                
-                submitButton.innerHTML = originalText;
-                submitButton.disabled = false;
-                
-                // Hide success message after 5 seconds
                 setTimeout(() => {
                     document.getElementById('successMessage').classList.remove('show');
                 }, 5000);
-            }, 2000);
+            } catch (error) {
+                alert(error.message || 'Unable to reach the server. Please try again.');
+            } finally {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            }
         }
 
         // FAQ Accordion
