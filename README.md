@@ -1,4 +1,4 @@
-# Seleman Business Management
+# celine Business Management
 
 Static website with a Node.js and MongoDB backend and a protected team workspace.
 
